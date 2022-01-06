@@ -33,6 +33,7 @@ import hashlib
 import math
 
 # -----------------------------------------------------------------------------
+import os
 
 from errors import ExchangeNotAvailable
 from errors import DDoSProtection
@@ -10135,7 +10136,7 @@ class coinmarketcap (Exchange):
             'hasFetchTickers': True,
             'urls': {
                 'logo': 'https://user-images.githubusercontent.com/1294454/28244244-9be6312a-69ed-11e7-99c1-7c1797275265.jpg',
-                'api': 'https://api.coinmarketcap.com',
+                'api': 'https://pro-api.coinmarketcap.com',
                 'www': 'https://coinmarketcap.com',
                 'doc': 'https://coinmarketcap.com/api',
             },
@@ -10145,9 +10146,11 @@ class coinmarketcap (Exchange):
                         'ticker/',
                         'ticker/{id}/',
                         'global/',
+                        'tools/price-conversion',
                     ],
                 },
             },
+            'apiKey': os.getenv('API_KEY_COINMARKETCAP'),
             'currencyCodes': [
                 'AUD',
                 'BRL',
@@ -10169,12 +10172,20 @@ class coinmarketcap (Exchange):
         params.update(config)
         super(coinmarketcap, self).__init__(params)
 
+    def convert_symbol(self, symbol, convert):
+        result = self.publicGetToolsPriceConversion({
+            'amount': 1,
+            'symbol': symbol,
+            'convert': convert
+        })
+        return result['data']['quote'][convert]['price']
+
     def fetch_order_book(self, symbol, params={}):
         raise ExchangeError('Fetching order books is not supported by the API of ' + self.id)
 
     def fetch_markets(self):
         markets = self.publicGetTicker({
-            'limit' : 0,
+            'limit': 0,
         })
         result = []
         for p in range(0, len(markets)):
@@ -10279,6 +10290,9 @@ class coinmarketcap (Exchange):
         return self.parse_ticker(ticker, market)
 
     def sign(self, path, api='public', method='GET', params={}, headers=None, body=None):
+        headers = {
+            'X-CMC_PRO_API_KEY': self.apiKey
+        }
         url = self.urls['api'] + '/' + self.version + '/' + self.implode_params(path, params)
         query = self.omit(params, self.extract_params(path))
         if query:

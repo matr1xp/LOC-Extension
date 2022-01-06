@@ -835,6 +835,9 @@ class Exchange(object):
             },
         }
 
+    def convert_symbol(self, symbol, convert):
+        return self.convert_symbol(symbol, convert)
+
     def edit_limit_buy_order(self, id, symbol, *args):
         return self.edit_limit_order(symbol, 'buy', *args)
 

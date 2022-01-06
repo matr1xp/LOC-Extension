@@ -360,12 +360,10 @@ class LocImpl(unohelper.Base, LOC):
                             result = 'Request market_cap or dominance with GLOBAL'
                         logger.info('ccxt: {} GLOBAL {} = {}'.format(exchng, datacode, result))
                     else:
-                        markets = xchng.markets
-                        if markets == None:
-                            markets = xchng.load_markets()
-                        if ticker in xchng.symbols:
-                            result=float(markets[ticker]['info'][datacode])
-                            logger.info('ccxt: {} {} {} = {}'.format(exchng, ticker, datacode, result))
+                        if ticker and datacode:
+                            convert = datacode.upper()
+                            result = xchng.convert_symbol(ticker, convert)
+                            logger.info('ccxt: convert symbol {}/{} = {}'.format(ticker, convert, result))
                         else:
                             result = 'Unknown ' + exchng + ' pair: ' + ticker
                             logger.info('ccxt: {}'.format(result))
