@@ -13,3 +13,4 @@
 /src/__pycache__/loc.cpython-35.pyc
 /src/__pycache__/loctest.cpython-35.pyc
 /examples/.~lock.PoloniexExample.ods#
+.idea/**
