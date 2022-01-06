@@ -94,6 +94,7 @@ exchanges = [
     'coinsecure',
     'coinspot',
     'cryptopia',
+    'cryptocom',
     'dsx',
     'exmo',
     'flowbtc',
@@ -11339,6 +11340,109 @@ class cryptopia (Exchange):
 
 # -----------------------------------------------------------------------------
 
+class cryptocom (Exchange):
+
+    def __init__(self, config={}):
+        params = {
+            'id': 'cryptocom',
+            'name': 'Crypto.com Exchange',
+            'comment': 'Crypto.com API',
+            'countries': ['HK', 'AU'],
+            'rateLimit': 1000,
+            'version': 'v2',
+            'urls': {
+                'api': 'https://api.crypto.com',
+                'logo': 'https://user-images.githubusercontent.com/1294454/147792121-38ed5e36-c229-48d6-b49a-48d05fc19ed4.jpeg',
+                'www': 'https://crypto.com/exchange',
+                'doc': 'https://exchange-docs.crypto.com',
+            },
+            'api': {
+                'public': {
+                    'get': [
+                        'public/get-instruments',
+                        'public/get-ticker',
+                    ],
+                },
+            },
+        }
+        params.update(config)
+        super(cryptocom, self).__init__(params)
+
+    def fetch_markets(self):
+        markets = self.publicGetPublicGetInstruments()
+        instruments = markets['result']['instruments']
+        result = []
+        for market in instruments:
+            id = market['instrument_name']
+            symbol = market['instrument_name']
+            base = market['base_currency']
+            quote = market['quote_currency']
+            result.append({
+                'id': id,
+                'symbol': symbol,
+                'base': base,
+                'quote': quote,
+                'info': id,
+            })
+        return result
+
+    def fetch_ticker(self, symbol, params={}):
+        self.load_markets()
+        market = self.market(symbol)
+        ticker = self.publicGetPublicGetTicker(self.extend({
+            'instrument_name': market['id'],
+        }, params))
+        return self.parse_ticker(ticker, market)
+
+    def parse_ticker(self, ticker, market=None):
+        symbol = None
+        if market:
+            symbol = market['symbol']
+        result = ticker['result']['data']
+        return {
+            'symbol': symbol,
+            'timestamp': float(result['t']),
+            'datetime': self.iso8601(result['t']),
+            'last': float(result['a']),
+            'high': float(result['h']),
+            'low': float(result['l']),
+            'bid': float(result['b']),
+            'ask': float(result['k']),
+            'change': float(result['c']),
+            'quoteVolume': float(result['v']),
+            'info': result,
+        }
+
+    def request(self, path, api='public', method='GET', params={}, headers=None, body=None):
+        response = self.fetch2(path, api, method, params, headers, body)
+        if 'result' in response:
+            if response['result']:
+                return response
+            raise ExchangeError(self.id + ' ' + self.json(response))
+        return response
+
+    def sign(self, path, api='public', method='GET', params={}, headers=None, body=None):
+        url = self.urls['api'] + '/'
+        if api == 'public':
+            query = '?'
+            for q in params:
+                query += str(q) + '=' + str(params[q])
+            url += self.version + '/' + path + query
+        else:
+            nonce = self.nonce()
+            url += self.version + '/' + self.implode_params(path, params)
+            query = self.extend({
+                'nonce': nonce,
+                'apikey': self.apiKey,
+            }, self.omit(params, self.extract_params(path)))
+            url += '?' + self.urlencode(query)
+            headers = {
+                'Content-Type': 'application/json',
+                'X-Signature': self.hmac(self.encode(url), self.encode(self.secret))
+            }
+        return {'url': url, 'method': method, 'body': body, 'headers': headers}
+
+# -----------------------------------------------------------------------------
 
 class dsx (btce):
 

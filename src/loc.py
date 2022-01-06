@@ -208,6 +208,8 @@ class LocImpl(unohelper.Base, LOC):
                     xchng = coinspot()
                 elif exchng == 'cryptopia':
                     xchng = cryptopia()
+                elif exchng == 'cryptocom':
+                    xchng = cryptocom()
                 elif exchng == 'dsx':
                     xchng = dsx()
                 elif exchng == 'exmo':
