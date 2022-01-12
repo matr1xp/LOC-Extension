@@ -10290,6 +10290,8 @@ class coinmarketcap (Exchange):
         return self.parse_ticker(ticker, market)
 
     def sign(self, path, api='public', method='GET', params={}, headers=None, body=None):
+        if not self.apiKey:
+            raise ExchangeError(self.id + ": API Key not set!")
         headers = {
             'X-CMC_PRO_API_KEY': self.apiKey
         }
